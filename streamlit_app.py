@@ -43,10 +43,11 @@ def main_page(client):
         st.image(uploaded_image, caption="Uploaded Social Media Post")
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         
-        comments = ["Great post!", "Your makeup looks terrible."]
+        comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your best look."]
         
         for comment in comments:
             if client:
+                # Customize the behavior based on the selected mode
                 if st.session_state["archive_mode"] == "Customize":
                     category = st.session_state["custom_category"]
                     classification, is_bad, related = classify_comment(comment, category, client)
@@ -54,12 +55,17 @@ def main_page(client):
                         st.error(f"🚫 Comment Archived: {comment}")
                     else:
                         st.success(f"✅ Comment Kept: {comment}")
+                
                 elif st.session_state["archive_mode"] == "Archive ALL bad comments":
                     classification, is_bad, _ = classify_comment(comment, "general", client)
                     if is_bad:
                         st.error(f"🚫 Comment Archived: {comment}")
                     else:
                         st.success(f"✅ Comment Kept: {comment}")
+                
+                elif st.session_state["archive_mode"] == "Keep ALL Comments":
+                    st.success(f"✅ Comment Kept: {comment}")  # Always show comments
+
             else:
                 st.warning("No OpenAI client available.")
 
