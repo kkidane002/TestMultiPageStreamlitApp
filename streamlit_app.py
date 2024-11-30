@@ -23,7 +23,10 @@ def classify_comment(comment, category, client):
     related_to_category = True
     return classification_and_reason, is_bad, related_to_category
 
-# Main page function
+# Initialize session state variables
+if "archive_mode" not in st.session_state:
+    st.session_state["archive_mode"] = "Archive ALL bad comments"
+
 def main_page(client):
     st.title("📸 Social Media Post")
     
@@ -32,6 +35,7 @@ def main_page(client):
     
     if uploaded_image:
         st.image(uploaded_image, caption="Uploaded Social Media Post")
+        st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         st.write("Generating comments...")
         
         comments = ["Great post!", "Your makeup looks terrible."]
@@ -39,24 +43,27 @@ def main_page(client):
         for comment in comments:
             if client:
                 classification, is_bad, _ = classify_comment(comment, "general", client)
-                if is_bad:
+                if st.session_state["archive_mode"] == "Archive ALL bad comments" and is_bad:
                     st.error(f"🚫 Comment Archived: {comment}")
                 else:
                     st.success(f"✅ Comment Kept: {comment}")
             else:
                 st.warning("No OpenAI client available.")
 
-# Settings page function
 def settings_page():
     st.title("⚙️ Settings")
     st.write("Modify your app settings here.")
     
     archive_mode = st.radio(
         "Select your archiving preference:",
-        ["Archive ALL bad comments", "Keep ALL Comments", "Customize"]
+        ["Archive ALL bad comments", "Keep ALL Comments", "Customize"],
+        index=["Archive ALL bad comments", "Keep ALL Comments", "Customize"].index(st.session_state["archive_mode"]),
     )
     
-    st.write(f"Current selection: {archive_mode}")
+    # Update session state
+    st.session_state["archive_mode"] = archive_mode
+    
+    st.write(f"Current selection: {st.session_state['archive_mode']}")
     st.info("Return to the main page to see how settings are applied.")
 
 # Page navigation using sidebar
