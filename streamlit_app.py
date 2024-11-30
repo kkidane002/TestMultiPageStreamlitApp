@@ -1,5 +1,7 @@
 import streamlit as st
 from openai import OpenAI
+from PIL import Image
+import io
 
 # Define the classify_comment function before calling it
 def classify_comment(comment, category, client):
@@ -33,21 +35,30 @@ if "archive_mode" not in st.session_state:
 if "custom_category" not in st.session_state:
     st.session_state["custom_category"] = "body"
 
+if "uploaded_image" not in st.session_state:
+    st.session_state["uploaded_image"] = None
+
 def main_page(client):
     st.title("📸 Social Media Post")
     
-    st.write("Upload a picture to simulate a social media post.")
     uploaded_image = st.file_uploader("Choose an image", type=["jpg", "png", "jpeg"])
-    
+
+    # Save the uploaded image to session state
     if uploaded_image:
-        st.image(uploaded_image, caption="Uploaded Social Media Post")
+        st.session_state["uploaded_image"] = uploaded_image
+    
+    # Display the uploaded image if it exists in session state
+    if st.session_state["uploaded_image"]:
+        image_bytes = st.session_state["uploaded_image"].getvalue()
+        image = Image.open(io.BytesIO(image_bytes))
+        st.image(image, caption="Uploaded Social Media Post")
+        
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         
         comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your best look."]
         
         for comment in comments:
             if client:
-                # Customize the behavior based on the selected mode
                 if st.session_state["archive_mode"] == "Customize":
                     category = st.session_state["custom_category"]
                     classification, is_bad, related = classify_comment(comment, category, client)
@@ -64,7 +75,7 @@ def main_page(client):
                         st.success(f"✅ Comment Kept: {comment}")
                 
                 elif st.session_state["archive_mode"] == "Keep ALL Comments":
-                    st.success(f"✅ Comment Kept: {comment}")  # Always show comments
+                    st.success(f"✅ Comment Kept: {comment}")
 
             else:
                 st.warning("No OpenAI client available.")
