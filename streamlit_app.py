@@ -1,56 +1,76 @@
 import streamlit as st
 from openai import OpenAI
 
-# Show title and description.
-st.title("💬 Chatbot")
-st.write(
-    "This is a simple chatbot that uses OpenAI's GPT-3.5 model to generate responses. "
-    "To use this app, you need to provide an OpenAI API key, which you can get [here](https://platform.openai.com/account/api-keys). "
-    "You can also learn how to build this app step by step by [following our tutorial](https://docs.streamlit.io/develop/tutorials/llms/build-conversational-apps)."
-)
+# Import your custom modules or page functions
+def main_page(client):
+    st.title("📸 Social Media Post")
+    
+    st.write("Upload a picture to simulate a social media post.")
+    uploaded_image = st.file_uploader("Choose an image", type=["jpg", "png", "jpeg"])
+    
+    if uploaded_image:
+        st.image(uploaded_image, caption="Uploaded Social Media Post")
+        st.write("Generating comments...")
+        
+        # Example comments (you could generate these dynamically)
+        comments = ["Great post!", "Your makeup looks terrible."]
+        
+        for comment in comments:
+            classification, is_bad, _ = classify_comment(comment, "general", client)
+            if is_bad:
+                st.error(f"🚫 Comment Archived: {comment}")
+            else:
+                st.success(f"✅ Comment Kept: {comment}")
 
-# Ask user for their OpenAI API key via `st.text_input`.
-# Alternatively, you can store the API key in `./.streamlit/secrets.toml` and access it
-# via `st.secrets`, see https://docs.streamlit.io/develop/concepts/connections/secrets-management
-openai_api_key = st.text_input("OpenAI API Key", type="password")
-if not openai_api_key:
-    st.info("Please add your OpenAI API key to continue.", icon="🗝️")
-else:
 
-    # Create an OpenAI client.
+def settings_page():
+    st.title("⚙️ Settings")
+    st.write("Modify your app settings here.")
+    
+    st.write("Example Setting: Archiving Mode")
+    archive_mode = st.radio(
+        "Select your archiving preference:",
+        ["Archive ALL bad comments", "Keep ALL Comments", "Customize"]
+    )
+    
+    st.write(f"Current selection: {archive_mode}")
+    st.info("Return to the main page to see how settings are applied.")
+
+
+# Page Navigation using a sidebar
+page = st.sidebar.selectbox("Navigate", ["Home", "Settings"])
+
+# OpenAI API Key Section (Reusable)
+openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
+if openai_api_key:
     client = OpenAI(api_key=openai_api_key)
+else:
+    st.sidebar.info("Please enter your OpenAI API key to use the app.", icon="🔑")
+    client = None
 
-    # Create a session state variable to store the chat messages. This ensures that the
-    # messages persist across reruns.
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+if page == "Home":
+    if client:
+        main_page(client)
+    else:
+        st.warning("Please provide your API key to use the home page.")
+elif page == "Settings":
+    settings_page()
 
-    # Display the existing chat messages via `st.chat_message`.
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# Classify comment function remains as previously defined
+def classify_comment(comment, category, client):
+    prompt = (
+        f"As a TikTok comment classifier, classify the comment as 'good' or 'bad'. "
+        f"Comment: '{comment}'\n\n"
+        "Classification and Reason:"
+    )
 
-    # Create a chat input field to allow the user to enter a message. This will display
-    # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2,
+    )
 
-        # Store and display the current prompt.
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Generate a response using the OpenAI API.
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
-        )
-
-        # Stream the response to the chat using `st.write_stream`, then store it in 
-        # session state.
-        with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    classification_and_reason = response.choices[0].message.content.strip()
+    is_bad = "bad" in classification_and_reason.lower()
+    related_to_category = True
+    return classification_and_reason, is_bad, related_to_category
