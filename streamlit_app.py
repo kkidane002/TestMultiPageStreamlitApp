@@ -54,7 +54,8 @@ def main_page(client):
         st.image(image, caption="Uploaded Social Media Post")
         
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
-        
+        if st.session_state["archive_mode"] == "Customize":
+            st.write(f"Current Archiving Category: {st.session_state['custom_category']}")
         # Hardcoded comments
         comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "You are not in good body shape."]
         
