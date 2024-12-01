@@ -39,7 +39,7 @@ if "uploaded_image" not in st.session_state:
     st.session_state["uploaded_image"] = None
 
 def main_page(client):
-    st.title("📸 Social Media Post")
+    st.title("📸 KLS Media Post")
     
     uploaded_image = st.file_uploader("Choose an image", type=["jpg", "png", "jpeg"])
 
@@ -56,10 +56,10 @@ def main_page(client):
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         
         # Hardcoded comments
-        comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your best look."]
+        comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your fitest look."]
         
         # User input for custom comments
-        custom_comment = st.text_input("Add your own comment to classify:")
+        custom_comment = st.text_input("Add Comment...")
         if custom_comment:
             comments.append(custom_comment)
         
@@ -88,8 +88,8 @@ def main_page(client):
 
 
 def settings_page():
-    st.title("⚙️ Settings")
-    st.write("Modify your app settings here.")
+    st.title("⚙️ KLS Media Settings")
+    st.write("Modify your KLS app settings here.")
     
     archive_mode = st.radio(
         "Select your archiving preference:",
@@ -109,10 +109,10 @@ def settings_page():
     st.write(f"Current selection: {st.session_state['archive_mode']}")
     if archive_mode == "Customize":
         st.write(f"Custom Category: {st.session_state['custom_category']}")
-    st.info("Return to the main page to see how settings are applied.")
+    st.info("Return to the post feed page to see how settings are applied.")
 
 # Page navigation using sidebar
-page = st.sidebar.selectbox("Navigate", ["Home", "Settings"])
+page = st.sidebar.selectbox("Navigate", ["Post Feeds", "Settings"])
 
 # OpenAI API Key Section
 openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
@@ -123,7 +123,7 @@ if openai_api_key:
     except Exception as e:
         st.sidebar.error(f"Error initializing OpenAI client: {e}")
 
-if page == "Home":
+if page == "Post Feeds":
     main_page(client)
 elif page == "Settings":
     settings_page()
