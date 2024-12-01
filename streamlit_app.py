@@ -56,7 +56,7 @@ def main_page(client):
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         
         # Hardcoded comments
-        comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your fitest look."]
+        comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "You are not in good body shape."]
         
         # User input for custom comments
         custom_comment = st.text_input("Add Comment...")
