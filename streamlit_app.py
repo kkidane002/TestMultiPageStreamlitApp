@@ -30,10 +30,10 @@ def classify_comment(comment, category, client):
 
 # Initialize session state variables
 if "archive_mode" not in st.session_state:
-    st.session_state["archive_mode"] = "Archive ALL bad comments"
+    st.session_state["archive_mode"] = "Keep ALL Comments"
 
 if "custom_category" not in st.session_state:
-    st.session_state["custom_category"] = "body"
+    st.session_state["custom_category"] = "none"
 
 if "uploaded_image" not in st.session_state:
     st.session_state["uploaded_image"] = None
