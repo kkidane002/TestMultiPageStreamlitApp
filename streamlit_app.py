@@ -55,7 +55,13 @@ def main_page(client):
         
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         
+        # Hardcoded comments
         comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your best look."]
+        
+        # User input for custom comments
+        custom_comment = st.text_input("Add your own comment to classify:")
+        if custom_comment:
+            comments.append(custom_comment)
         
         for comment in comments:
             if client:
@@ -79,6 +85,7 @@ def main_page(client):
 
             else:
                 st.warning("No OpenAI client available.")
+
 
 def settings_page():
     st.title("⚙️ Settings")
