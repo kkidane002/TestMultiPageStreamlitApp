@@ -43,63 +43,46 @@ def main_page(client):
     
     uploaded_image = st.file_uploader("Choose an image", type=["jpg", "png", "jpeg"])
 
-    # Save the uploaded image to session state
     if uploaded_image:
         st.session_state["uploaded_image"] = uploaded_image
     
-    # Display the uploaded image if it exists in session state
     if st.session_state["uploaded_image"]:
         image_bytes = st.session_state["uploaded_image"].getvalue()
         image = Image.open(io.BytesIO(image_bytes))
         st.image(image, caption="Uploaded Social Media Post")
         
-        st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
+    st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
 
-        # Initialize the comments list in session state if not already
-        if "comments" not in st.session_state:
-            st.session_state["comments"] = [
-                "Great post!", 
-                "Your makeup looks terrible.", 
-                "Amazing style!", 
-                "Not your best look."
-            ]
+    # Initialize comments if not done already
+    if "comments" not in st.session_state:
+        st.session_state["comments"] = [
+            "Great post!", 
+            "Your makeup looks terrible.", 
+            "Amazing style!", 
+            "Not your best look."
+        ]
 
-        # Initialize new comment key for clearing the input
-        if "new_comment" not in st.session_state:
-            st.session_state["new_comment"] = ""
+    # Initialize the input if not set
+    if "new_comment" not in st.session_state:
+        st.session_state["new_comment"] = ""
 
-        # User input for custom comments
-        custom_comment = st.text_input("Add your own comment to classify:", key="new_comment")
-        
-        # Button to add the comment
-        if st.button("Post Comment"):
-            if custom_comment.strip():  # Only add non-empty comments
-                st.session_state["comments"].append(custom_comment.strip())
-                st.session_state["new_comment"] = ""  # Clear input
-
-        # Loop through comments and classify
-        for comment in st.session_state["comments"]:
-            if client:
-                if st.session_state["archive_mode"] == "Customize":
-                    category = st.session_state["custom_category"]
-                    classification, is_bad, related = classify_comment(comment, category, client)
-                    if is_bad and related:
-                        st.error(f"🚫 Comment Archived: {comment}")
-                    else:
-                        st.success(f"✅ Comment Kept: {comment}")
-                
-                elif st.session_state["archive_mode"] == "Archive ALL bad comments":
-                    classification, is_bad, _ = classify_comment(comment, "general", client)
-                    if is_bad:
-                        st.error(f"🚫 Comment Archived: {comment}")
-                    else:
-                        st.success(f"✅ Comment Kept: {comment}")
-                
-                elif st.session_state["archive_mode"] == "Keep ALL Comments":
-                    st.success(f"✅ Comment Kept: {comment}")
-
+    custom_comment = st.text_input("Add your own comment to classify:", key="new_comment")
+    
+    if st.button("Post Comment"):
+        if custom_comment.strip():  # Ensure non-empty comment
+            st.session_state["comments"].append(custom_comment.strip())
+            st.session_state["new_comment"] = ""  # Clear input
+            st.experimental_rerun()  # Rerun the script to clear the input
+    
+    for comment in st.session_state["comments"]:
+        if client:
+            classification, is_bad, _ = classify_comment(comment, "general", client)
+            if is_bad:
+                st.error(f"🚫 Comment Archived: {comment}")
             else:
-                st.warning("No OpenAI client available.")
+                st.success(f"✅ Comment Kept: {comment}")
+        else:
+            st.warning("No OpenAI client available.")
 
 
 def settings_page():
