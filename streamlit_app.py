@@ -64,12 +64,18 @@ def main_page(client):
                 "Not your best look."
             ]
 
+        # Initialize new comment key for clearing the input
+        if "new_comment" not in st.session_state:
+            st.session_state["new_comment"] = ""
+
         # User input for custom comments
         custom_comment = st.text_input("Add your own comment to classify:", key="new_comment")
+        
+        # Button to add the comment
         if st.button("Post Comment"):
-            if custom_comment:
-                st.session_state["comments"].append(custom_comment)
-                st.session_state["new_comment"] = ""  # Clear the input field
+            if custom_comment.strip():  # Only add non-empty comments
+                st.session_state["comments"].append(custom_comment.strip())
+                st.session_state["new_comment"] = ""  # Clear input
 
         # Loop through comments and classify
         for comment in st.session_state["comments"]:
@@ -94,7 +100,6 @@ def main_page(client):
 
             else:
                 st.warning("No OpenAI client available.")
-
 
 
 def settings_page():
