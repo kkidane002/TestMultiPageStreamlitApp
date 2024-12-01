@@ -54,16 +54,25 @@ def main_page(client):
         st.image(image, caption="Uploaded Social Media Post")
         
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
-        
-        # Hardcoded comments
-        comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "Not your best look."]
-        
+
+        # Initialize the comments list in session state if not already
+        if "comments" not in st.session_state:
+            st.session_state["comments"] = [
+                "Great post!", 
+                "Your makeup looks terrible.", 
+                "Amazing style!", 
+                "Not your best look."
+            ]
+
         # User input for custom comments
-        custom_comment = st.text_input("Add your own comment to classify:")
-        if custom_comment:
-            comments.append(custom_comment)
-        
-        for comment in comments:
+        custom_comment = st.text_input("Add your own comment to classify:", key="new_comment")
+        if st.button("Post Comment"):
+            if custom_comment:
+                st.session_state["comments"].append(custom_comment)
+                st.session_state["new_comment"] = ""  # Clear the input field
+
+        # Loop through comments and classify
+        for comment in st.session_state["comments"]:
             if client:
                 if st.session_state["archive_mode"] == "Customize":
                     category = st.session_state["custom_category"]
@@ -85,6 +94,7 @@ def main_page(client):
 
             else:
                 st.warning("No OpenAI client available.")
+
 
 
 def settings_page():
