@@ -2,6 +2,20 @@ import streamlit as st
 from openai import OpenAI
 from PIL import Image
 import io
+import os
+
+# Load the OpenAI API key securely from environment variables
+openai_api_key = os.getenv("OPENAI_API_KEY")
+
+# Initialize OpenAI client
+client = None
+if openai_api_key:
+    try:
+        client = OpenAI(api_key=openai_api_key)
+    except Exception as e:
+        st.error(f"Error initializing OpenAI client: {e}")
+else:
+    st.error("OpenAI API key not found. Please set it as an environment variable.")
 
 # Define the classify_comment function before calling it
 def classify_comment(comment, category, client):
@@ -114,15 +128,6 @@ def settings_page():
 
 # Page navigation using sidebar
 page = st.sidebar.selectbox("Navigate", ["Post Feeds", "Settings"])
-
-# OpenAI API Key Section
-openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
-client = None
-if openai_api_key:
-    try:
-        client = OpenAI(api_key=openai_api_key)
-    except Exception as e:
-        st.sidebar.error(f"Error initializing OpenAI client: {e}")
 
 if page == "Post Feeds":
     main_page(client)
