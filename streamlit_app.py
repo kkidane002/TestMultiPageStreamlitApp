@@ -32,12 +32,19 @@ def classify_comment(comment, category):
         return "", False, False
     
     # Define the system message and the user prompt for the chat model
-    system_message = "You are a helpful TikTok comment classifier."
+    system_message = (
+        "You are a helpful TikTok comment classifier. "
+        "Your task is to classify comments as 'good' or 'bad' based on their tone and relevance to the specified category. "
+        "Consider keywords, phrases, and context that indicate positivity or negativity, as well as whether the comment is related to the selected category."
+    )
+
+    # Update the user message to ask the model to better understand category relevance
     user_message = (
-        f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}'. "
+        f"Classify the following comment as 'good' or 'bad' specifically in relation to the category '{category}'. "
+        f"Consider context, keywords, and common language used in the '{category}' domain. "
         f"Comment: '{comment}'\n\n"
-        "Classification and Reason:\n"
-        "Is this comment related to the category? (Yes/No):"
+        "Classification (good/bad) and Reason:\n"
+        "Does the comment relate to the category? (Yes/No):"
     )
     
     # Send the request to the chat model using the correct endpoint
