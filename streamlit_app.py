@@ -8,15 +8,12 @@ from googletrans import Translator
 # Load the OpenAI API key securely from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# Initialize OpenAI client
-client = None
-if openai_api_key:
-    try:
-        openai.api_key = openai_api_key
-    except Exception as e:
-        st.error(f"Error initializing OpenAI client: {e}")
-else:
+if not openai_api_key:
     st.error("OpenAI API key not found. Please set it as an environment variable.")
+else:
+    openai.api_key = openai_api_key  # Set OpenAI API key
+    translator = Translator()  # Initialize the Google Translator
+    
 
 # Initialize Google Translator
 translator = Translator()
