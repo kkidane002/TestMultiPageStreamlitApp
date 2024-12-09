@@ -13,6 +13,10 @@ if not openai_api_key:
 else:
     openai.api_key = openai_api_key  # Set OpenAI API key
     translator = Translator()  # Initialize the Google Translator
+    
+
+# Initialize Google Translator
+translator = Translator()
 
 # Define the translate_comment function using googletrans
 def translate_comment(comment):
@@ -23,28 +27,34 @@ def translate_comment(comment):
         st.error(f"Error occurred while translating: {e}")
         return comment  # Fallback to original comment if error occurs
 
-# Define the classify_comment function
+# Define the classify_comment function using chat-based API
 def classify_comment(comment, category):
-    prompt = (
-        f"As a TikTok comment classifier, classify the comment as 'good' or 'bad' "
-        f"specifically in relation to '{category}'. "
-        f"Comment: '{comment}'\n\n"
-        "Classification and Reason:\n"
-        "Is this comment related to the category? (Yes/No):"
-    )
-
-    response = openai.Completion.create(
-        model="gpt-3.5-turbo",
-        prompt=prompt,
-        temperature=0.2,
-        max_tokens=150
-    )
-
-    classification_and_reason = response.choices[0].text.strip()
-    is_bad = "bad" in classification_and_reason.lower()
-    related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
+    # Define the messages as required by the chat-based API
+    messages = [
+        {"role": "system", "content": "You are a helpful TikTok comment classifier."},
+        {"role": "user", "content": f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}': {comment}"}
+    ]
     
-    return classification_and_reason, is_bad, related_to_category
+    try:
+        # Use the chat/completions endpoint
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",  # Specify the chat model
+            messages=messages,
+            temperature=0.2,
+            max_tokens=150
+        )
+        
+        classification_and_reason = response['choices'][0]['message']['content'].strip()
+        
+        # Determine if the comment is 'bad' or related to the category
+        is_bad = "bad" in classification_and_reason.lower()
+        related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
+        
+        return classification_and_reason, is_bad, related_to_category
+    
+    except Exception as e:
+        st.error(f"Error occurred while classifying the comment: {e}")
+        return "Error", False, False
 
 # Initialize session state variables
 if "archive_mode" not in st.session_state:
