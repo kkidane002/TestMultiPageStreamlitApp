@@ -3,6 +3,7 @@ from openai import OpenAI
 from PIL import Image
 import io
 import os
+from googletrans import Translator  # Import googletrans for translation
 
 # Load the OpenAI API key securely from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
@@ -16,6 +17,18 @@ if openai_api_key:
         st.error(f"Error initializing OpenAI client: {e}")
 else:
     st.error("OpenAI API key not found. Please set it as an environment variable.")
+
+# Initialize Google Translator
+translator = Translator()
+
+# Define the translate_comment function using googletrans
+def translate_comment(comment):
+    try:
+        translated = translator.translate(comment, src='auto', dest='en')  # Automatically detect the language
+        return translated.text
+    except Exception as e:
+        st.error(f"Error occurred while translating: {e}")
+        return comment  # Fallback to original comment if error occurs
 
 # Define the classify_comment function before calling it
 def classify_comment(comment, category, client):
@@ -97,10 +110,9 @@ def main_page(client):
                 
                 elif st.session_state["archive_mode"] == "Keep ALL Comments":
                     st.success(f"✅ Comment Kept: {comment}")
-
+                
             else:
                 st.warning("No OpenAI client available.")
-
 
 def settings_page():
     st.title("⚙️ KLS Media Settings")
