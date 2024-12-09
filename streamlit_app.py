@@ -13,10 +13,6 @@ if not openai_api_key:
 else:
     openai.api_key = openai_api_key  # Set OpenAI API key
     translator = Translator()  # Initialize the Google Translator
-    
-
-# Initialize Google Translator
-translator = Translator()
 
 # Define the translate_comment function using googletrans
 def translate_comment(comment):
@@ -28,10 +24,7 @@ def translate_comment(comment):
         return comment  # Fallback to original comment if error occurs
 
 # Define the classify_comment function
-def classify_comment(comment, category, client):
-    if not client:
-        return "No client initialized", False, False
-    
+def classify_comment(comment, category):
     prompt = (
         f"As a TikTok comment classifier, classify the comment as 'good' or 'bad' "
         f"specifically in relation to '{category}'. "
@@ -63,7 +56,7 @@ if "custom_category" not in st.session_state:
 if "uploaded_image" not in st.session_state:
     st.session_state["uploaded_image"] = None
 
-def main_page(client):
+def main_page():
     st.title("📸 KLS Media Post")
     
     uploaded_image = st.file_uploader("Choose an image", type=["jpg", "png", "jpeg"])
@@ -93,27 +86,23 @@ def main_page(client):
             # Translate comment if necessary
             translated_comment = translate_comment(comment)
 
-            if client:
-                if st.session_state["archive_mode"] == "Customize":
-                    category = st.session_state["custom_category"]
-                    classification, is_bad, related = classify_comment(translated_comment, category, client)
-                    if is_bad and related:
-                        st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
-                    else:
-                        st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
-                
-                elif st.session_state["archive_mode"] == "Archive ALL bad comments":
-                    classification, is_bad, _ = classify_comment(translated_comment, "general", client)
-                    if is_bad:
-                        st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
-                    else:
-                        st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
-                
-                elif st.session_state["archive_mode"] == "Keep ALL Comments":
+            if st.session_state["archive_mode"] == "Customize":
+                category = st.session_state["custom_category"]
+                classification, is_bad, related = classify_comment(translated_comment, category)
+                if is_bad and related:
+                    st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
+                else:
                     st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
-                
-            else:
-                st.warning("No OpenAI client available.")
+            
+            elif st.session_state["archive_mode"] == "Archive ALL bad comments":
+                classification, is_bad, _ = classify_comment(translated_comment, "general")
+                if is_bad:
+                    st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
+                else:
+                    st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
+            
+            elif st.session_state["archive_mode"] == "Keep ALL Comments":
+                st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
 
 def settings_page():
     st.title("⚙️ KLS Media Settings")
@@ -143,6 +132,6 @@ def settings_page():
 page = st.sidebar.selectbox("Navigate", ["Post Feeds", "Settings"])
 
 if page == "Post Feeds":
-    main_page(client)
+    main_page()
 elif page == "Settings":
     settings_page()
