@@ -12,7 +12,7 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 client = None
 if openai_api_key:
     try:
-        client = OpenAI(api_key=openai_api_key)
+        openai.api_key = openai_api_key
     except Exception as e:
         st.error(f"Error initializing OpenAI client: {e}")
 else:
@@ -30,7 +30,7 @@ def translate_comment(comment):
         st.error(f"Error occurred while translating: {e}")
         return comment  # Fallback to original comment if error occurs
 
-# Define the classify_comment function before calling it
+# Define the classify_comment function
 def classify_comment(comment, category, client):
     if not client:
         return "No client initialized", False, False
@@ -43,13 +43,14 @@ def classify_comment(comment, category, client):
         "Is this comment related to the category? (Yes/No):"
     )
 
-    response = client.chat.completions.create(
+    response = openai.Completion.create(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
+        prompt=prompt,
         temperature=0.2,
+        max_tokens=150
     )
 
-    classification_and_reason = response.choices[0].message.content.strip()
+    classification_and_reason = response.choices[0].text.strip()
     is_bad = "bad" in classification_and_reason.lower()
     related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
     
@@ -92,24 +93,27 @@ def main_page(client):
             comments.append(custom_comment)
         
         for comment in comments:
+            # Translate comment if necessary
+            translated_comment = translate_comment(comment)
+
             if client:
                 if st.session_state["archive_mode"] == "Customize":
                     category = st.session_state["custom_category"]
-                    classification, is_bad, related = classify_comment(comment, category, client)
+                    classification, is_bad, related = classify_comment(translated_comment, category, client)
                     if is_bad and related:
-                        st.error(f"🚫 Comment Archived: {comment}")
+                        st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
                     else:
-                        st.success(f"✅ Comment Kept: {comment}")
+                        st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
                 
                 elif st.session_state["archive_mode"] == "Archive ALL bad comments":
-                    classification, is_bad, _ = classify_comment(comment, "general", client)
+                    classification, is_bad, _ = classify_comment(translated_comment, "general", client)
                     if is_bad:
-                        st.error(f"🚫 Comment Archived: {comment}")
+                        st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
                     else:
-                        st.success(f"✅ Comment Kept: {comment}")
+                        st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
                 
                 elif st.session_state["archive_mode"] == "Keep ALL Comments":
-                    st.success(f"✅ Comment Kept: {comment}")
+                    st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
                 
             else:
                 st.warning("No OpenAI client available.")
