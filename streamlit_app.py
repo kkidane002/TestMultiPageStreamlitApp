@@ -84,6 +84,7 @@ def main_page():
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         if st.session_state["archive_mode"] == "Customize":
             st.write(f"Current Archiving Category: {st.session_state['custom_category']}")
+        
         # Hardcoded comments
         comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "You are not in good body shape."]
         
@@ -93,16 +94,22 @@ def main_page():
             comments.append(custom_comment)
         
         for comment in comments:
-            # Translate comment if necessary
+            # Step 1: Translate comment to English
             translated_comment = translate_comment(comment)
 
             if st.session_state["archive_mode"] == "Customize":
                 category = st.session_state["custom_category"]
+                
+                # Step 2: Check if the comment matches the selected category
                 classification, is_bad, related = classify_comment(translated_comment, category)
-                if is_bad and related:
-                    st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
+                
+                if related:  # Step 3: If related to category, check for negativity
+                    if is_bad:
+                        st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
+                    else:
+                        st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
                 else:
-                    st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
+                    st.info(f"💬 Comment Not Related to Category: {comment} (Translated: {translated_comment})")
             
             elif st.session_state["archive_mode"] == "Archive ALL bad comments":
                 classification, is_bad, _ = classify_comment(translated_comment, "general")
