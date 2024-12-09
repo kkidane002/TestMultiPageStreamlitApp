@@ -13,6 +13,7 @@ if not openai_api_key:
 else:
     openai.api_key = openai_api_key  # Set OpenAI API key
     translator = Translator()  # Initialize the Google Translator
+    
 
 # Initialize Google Translator
 translator = Translator()
@@ -26,49 +27,34 @@ def translate_comment(comment):
         st.error(f"Error occurred while translating: {e}")
         return comment  # Fallback to original comment if error occurs
 
-# Define the classify_comment function using the chat endpoint
+# Define the classify_comment function using chat-based API
 def classify_comment(comment, category):
-    if not comment:
-        return "", False, False
+    # Define the messages as required by the chat-based API
+    messages = [
+        {"role": "system", "content": "You are a helpful TikTok comment classifier."},
+        {"role": "user", "content": f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}': {comment}"}
+    ]
     
-    # Define the system message and the user prompt for the chat model
-    system_message = (
-        "You are a helpful TikTok comment classifier. You will classify comments based on categories such as "
-        "personality, body, makeup, fashion, etc. Your goal is to determine if a comment is related to the selected category "
-        "and whether it's good or bad."
-    )
-
-    user_message = (
-        f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}'. "
-        f"Here are the possible categories: Personality (e.g., comments on character or traits), Body (e.g., comments about appearance), "
-        "Makeup (e.g., comments about makeup skills), Fashion (e.g., comments on style), Performance (e.g., comments about abilities).\n\n"
-        f"Comment: '{comment}'\n\n"
-        "Classification and Reason:\n"
-        "Is this comment related to the category? (Yes/No):"
-    )
-
-    # Send the request to the chat model
     try:
+        # Use the chat/completions endpoint
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message}
-            ]
+            model="gpt-3.5-turbo",  # Specify the chat model
+            messages=messages,
+            temperature=0.2,
+            max_tokens=150
         )
         
         classification_and_reason = response['choices'][0]['message']['content'].strip()
-
-        # Check if the comment is considered bad and related to the category
+        
+        # Determine if the comment is 'bad' or related to the category
         is_bad = "bad" in classification_and_reason.lower()
         related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
-
+        
         return classification_and_reason, is_bad, related_to_category
+    
     except Exception as e:
-        print(f"Error occurred: {e}")
-        return "", False, False
-
-
+        st.error(f"Error occurred while classifying the comment: {e}")
+        return "Error", False, False
 
 # Initialize session state variables
 if "archive_mode" not in st.session_state:
@@ -98,7 +84,6 @@ def main_page():
         st.write(f"Current Archiving Mode: {st.session_state['archive_mode']}")
         if st.session_state["archive_mode"] == "Customize":
             st.write(f"Current Archiving Category: {st.session_state['custom_category']}")
-        
         # Hardcoded comments
         comments = ["Great post!", "Your makeup looks terrible.", "Amazing style!", "You are not in good body shape."]
         
@@ -108,36 +93,25 @@ def main_page():
             comments.append(custom_comment)
         
         for comment in comments:
-            # Step 1: Translate comment to English
+            # Translate comment if necessary
             translated_comment = translate_comment(comment)
 
-            # Check the archiving preference
             if st.session_state["archive_mode"] == "Customize":
                 category = st.session_state["custom_category"]
-                
-                # Step 2: Check if the comment matches the selected category using keywords
                 classification, is_bad, related = classify_comment(translated_comment, category)
-                
-                if related:  # Step 3: If related to category, check for negativity
-                    if is_bad:
-                        st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
-                    else:
-                        st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
+                if is_bad and related:
+                    st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
                 else:
-                    st.info(f"💬 Comment Not Related to Category: {comment} (Translated: {translated_comment})")
+                    st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
             
             elif st.session_state["archive_mode"] == "Archive ALL bad comments":
-                # Archive all bad comments regardless of category
                 classification, is_bad, _ = classify_comment(translated_comment, "general")
-                
-                # If the comment is classified as bad, archive it
                 if is_bad:
                     st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
                 else:
                     st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
             
             elif st.session_state["archive_mode"] == "Keep ALL Comments":
-                # Keep all comments regardless of content or category
                 st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
 
 def settings_page():
@@ -171,3 +145,4 @@ if page == "Post Feeds":
     main_page()
 elif page == "Settings":
     settings_page()
+
