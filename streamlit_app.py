@@ -60,9 +60,12 @@ def classify_comment(comment, category):
     
     classification_and_reason = response.choices[0].message["content"].strip()
     is_bad = "bad" in classification_and_reason.lower()
-    related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
+    
+    # Check if the comment is related to the category (explicitly asking for keywords, phrases, and context)
+    related_to_category = "yes" in classification_and_reason.lower().split("does the comment relate to the category?")[-1].strip()
     
     return classification_and_reason, is_bad, related_to_category
+
 
 # Initialize session state variables
 if "archive_mode" not in st.session_state:
