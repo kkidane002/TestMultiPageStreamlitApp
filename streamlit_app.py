@@ -26,27 +26,32 @@ def translate_comment(comment):
         st.error(f"Error occurred while translating: {e}")
         return comment  # Fallback to original comment if error occurs
 
-# Define the classify_comment function
+# Define the classify_comment function using the chat endpoint
 def classify_comment(comment, category):
     if not comment:
         return "", False, False
     
-    prompt = (
-        f"As a TikTok comment classifier, classify the comment as 'good' or 'bad' "
-        f"specifically in relation to '{category}'. "
+    # Define the system message and the user prompt for the chat model
+    system_message = "You are a helpful TikTok comment classifier."
+    user_message = (
+        f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}'. "
         f"Comment: '{comment}'\n\n"
         "Classification and Reason:\n"
         "Is this comment related to the category? (Yes/No):"
     )
-
-    response = openai.Completion.create(
+    
+    # Send the request to the chat model using the correct endpoint
+    response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        prompt=prompt,
+        messages=[
+            {"role": "system", "content": system_message},
+            {"role": "user", "content": user_message}
+        ],
         temperature=0.2,
         max_tokens=150
     )
-
-    classification_and_reason = response.choices[0].text.strip()
+    
+    classification_and_reason = response.choices[0].message["content"].strip()
     is_bad = "bad" in classification_and_reason.lower()
     related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
     
