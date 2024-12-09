@@ -31,14 +31,8 @@ def translate_comment(comment):
 def classify_comment(comment, category):
     # Define the messages as required by the chat-based API
     messages = [
-        {"role": "system", "content": "You are an intelligent TikTok comment classifier, capable of understanding general context and categorizing comments into broad categories like Body, Makeup, Personality, Fashion, Performance, etc."},
-        {"role": "user", "content": (
-            f"Classify the following comment as 'good' or 'bad' specifically in relation to the category '{category}':\n\n"
-            f"Comment: '{comment}'\n\n"
-            "If the comment relates to the category, explain how. If it does not, explain why it is unrelated. "
-            "Always consider how comments may refer to personality traits, physical appearance, fashion, and more. "
-            "Do not restrict yourself to only explicit keywords, but also consider indirect references and the general tone of the comment."
-        )}
+        {"role": "system", "content": "You are a helpful TikTok comment classifier."},
+        {"role": "user", "content": f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}': {comment}"}
     ]
     
     try:
@@ -54,9 +48,7 @@ def classify_comment(comment, category):
         
         # Determine if the comment is 'bad' or related to the category
         is_bad = "bad" in classification_and_reason.lower()
-        
-        # Check if the model mentions if the comment is related to the category
-        related_to_category = "yes" in classification_and_reason.lower().split("explain how")[-1].strip()
+        related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
         
         return classification_and_reason, is_bad, related_to_category
     
