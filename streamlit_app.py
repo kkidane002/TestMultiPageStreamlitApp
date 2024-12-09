@@ -29,32 +29,48 @@ def translate_comment(comment):
 
 # Define the classify_comment function using chat-based API
 def classify_comment(comment, category):
-    # Define the messages as required by the chat-based API
-    messages = [
-        {"role": "system", "content": "You are a helpful TikTok comment classifier."},
-        {"role": "user", "content": f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}': {comment}"}
-    ]
+    # Define category-specific keywords for better matching
+    category_keywords = {
+        "body": ["body", "shape", "appearance", "figure"],
+        "makeup": ["makeup", "foundation", "lipstick", "beauty"],
+        "personality": ["evil", "kind", "personality", "attitude", "behavior", "character"],
+        "fashion": ["fashion", "style", "clothing", "outfit", "trend"],
+        "performance": ["performance", "talent", "show", "acting", "skills"]
+    }
     
-    try:
-        # Use the chat/completions endpoint
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # Specify the chat model
-            messages=messages,
-            temperature=0.2,
-            max_tokens=150
-        )
+    # Check if comment contains keywords related to the selected category
+    def match_category_with_keywords(comment, category):
+        keywords = category_keywords.get(category, [])
+        return any(keyword in comment.lower() for keyword in keywords)
+
+    # If the comment matches the category using keywords, classify it
+    if match_category_with_keywords(comment, category):
+        # Define the messages as required by the chat-based API
+        messages = [
+            {"role": "system", "content": "You are a helpful TikTok comment classifier."},
+            {"role": "user", "content": f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}': {comment}"}
+        ]
         
-        classification_and_reason = response['choices'][0]['message']['content'].strip()
+        try:
+            # Use the chat/completions endpoint
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",  # Specify the chat model
+                messages=messages,
+                temperature=0.2,
+                max_tokens=150
+            )
+            
+            classification_and_reason = response['choices'][0]['message']['content'].strip()
+            
+            # Determine if the comment is 'bad' or related to the category
+            is_bad = "bad" in classification_and_reason.lower()
+            return classification_and_reason, is_bad, True  # Matched the category
         
-        # Determine if the comment is 'bad' or related to the category
-        is_bad = "bad" in classification_and_reason.lower()
-        related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
-        
-        return classification_and_reason, is_bad, related_to_category
-    
-    except Exception as e:
-        st.error(f"Error occurred while classifying the comment: {e}")
-        return "Error", False, False
+        except Exception as e:
+            st.error(f"Error occurred while classifying the comment: {e}")
+            return "Error", False, False
+    else:
+        return "Comment does not match selected category.", False, False
 
 # Initialize session state variables
 if "archive_mode" not in st.session_state:
@@ -100,7 +116,7 @@ def main_page():
             if st.session_state["archive_mode"] == "Customize":
                 category = st.session_state["custom_category"]
                 
-                # Step 2: Check if the comment matches the selected category
+                # Step 2: Check if the comment matches the selected category using keywords
                 classification, is_bad, related = classify_comment(translated_comment, category)
                 
                 if related:  # Step 3: If related to category, check for negativity
@@ -152,3 +168,4 @@ if page == "Post Feeds":
     main_page()
 elif page == "Settings":
     settings_page()
+
