@@ -113,6 +113,7 @@ def main_page():
             # Step 1: Translate comment to English
             translated_comment = translate_comment(comment)
 
+            # Check the archiving preference
             if st.session_state["archive_mode"] == "Customize":
                 category = st.session_state["custom_category"]
                 
@@ -128,6 +129,7 @@ def main_page():
                     st.info(f"💬 Comment Not Related to Category: {comment} (Translated: {translated_comment})")
             
             elif st.session_state["archive_mode"] == "Archive ALL bad comments":
+                # Archive all bad comments regardless of category
                 classification, is_bad, _ = classify_comment(translated_comment, "general")
                 if is_bad:
                     st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
@@ -135,6 +137,7 @@ def main_page():
                     st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
             
             elif st.session_state["archive_mode"] == "Keep ALL Comments":
+                # Keep all comments regardless of content or category
                 st.success(f"✅ Comment Kept: {comment} (Translated: {translated_comment})")
 
 def settings_page():
@@ -168,4 +171,3 @@ if page == "Post Feeds":
     main_page()
 elif page == "Settings":
     settings_page()
-
