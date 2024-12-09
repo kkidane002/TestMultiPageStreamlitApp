@@ -33,38 +33,41 @@ def classify_comment(comment, category):
     
     # Define the system message and the user prompt for the chat model
     system_message = (
-        "You are a helpful TikTok comment classifier. "
-        "Your task is to classify comments as 'good' or 'bad' based on their tone and relevance to the specified category. "
-        "Consider keywords, phrases, and context that indicate positivity or negativity, as well as whether the comment is somehow or anyway related to the selected category."
+        "You are a helpful TikTok comment classifier. You will classify comments based on categories such as "
+        "personality, body, makeup, fashion, etc. Your goal is to determine if a comment is related to the selected category "
+        "and whether it's good or bad."
     )
 
-    # Update the user message to ask the model to better understand category relevance
     user_message = (
-        f"Classify the following comment as 'good' or 'bad' specifically in relation to the category '{category}'. "
-        f"Consider context, keywords, and common language used in the '{category}' domain. "
+        f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}'. "
+        f"Here are the possible categories: Personality (e.g., comments on character or traits), Body (e.g., comments about appearance), "
+        "Makeup (e.g., comments about makeup skills), Fashion (e.g., comments on style), Performance (e.g., comments about abilities).\n\n"
         f"Comment: '{comment}'\n\n"
-        "Classification (good/bad) and Reason:\n"
-        "Does the comment relate to the category? (Yes/No):"
+        "Classification and Reason:\n"
+        "Is this comment related to the category? (Yes/No):"
     )
-    
-    # Send the request to the chat model using the correct endpoint
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ],
-        temperature=0.2,
-        max_tokens=150
-    )
-    
-    classification_and_reason = response.choices[0].message["content"].strip()
-    is_bad = "bad" in classification_and_reason.lower()
-    
-    # Check if the comment is related to the category (explicitly asking for keywords, phrases, and context)
-    related_to_category = "yes" in classification_and_reason.lower().split("does the comment relate to the category?")[-1].strip()
-    
-    return classification_and_reason, is_bad, related_to_category
+
+    # Send the request to the chat model
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ]
+        )
+        
+        classification_and_reason = response['choices'][0]['message']['content'].strip()
+
+        # Check if the comment is considered bad and related to the category
+        is_bad = "bad" in classification_and_reason.lower()
+        related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
+
+        return classification_and_reason, is_bad, related_to_category
+    except Exception as e:
+        print(f"Error occurred: {e}")
+        return "", False, False
+
 
 
 # Initialize session state variables
