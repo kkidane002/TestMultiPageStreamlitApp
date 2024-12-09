@@ -13,7 +13,6 @@ if not openai_api_key:
 else:
     openai.api_key = openai_api_key  # Set OpenAI API key
     translator = Translator()  # Initialize the Google Translator
-    
 
 # Initialize Google Translator
 translator = Translator()
@@ -27,50 +26,31 @@ def translate_comment(comment):
         st.error(f"Error occurred while translating: {e}")
         return comment  # Fallback to original comment if error occurs
 
-# Define the classify_comment function using chat-based API
+# Define the classify_comment function
 def classify_comment(comment, category):
-    # Define category-specific keywords for better matching
-    category_keywords = {
-        "body": ["body", "shape", "appearance", "figure"],
-        "makeup": ["makeup", "foundation", "lipstick", "beauty"],
-        "personality": ["evil", "kind", "personality", "attitude", "behavior", "character"],
-        "fashion": ["fashion", "style", "clothing", "outfit", "trend"],
-        "performance": ["performance", "talent", "show", "acting", "skills"]
-    }
+    if not comment:
+        return "", False, False
     
-    # Check if comment contains keywords related to the selected category
-    def match_category_with_keywords(comment, category):
-        keywords = category_keywords.get(category, [])
-        return any(keyword in comment.lower() for keyword in keywords)
+    prompt = (
+        f"As a TikTok comment classifier, classify the comment as 'good' or 'bad' "
+        f"specifically in relation to '{category}'. "
+        f"Comment: '{comment}'\n\n"
+        "Classification and Reason:\n"
+        "Is this comment related to the category? (Yes/No):"
+    )
 
-    # If the comment matches the category using keywords, classify it
-    if match_category_with_keywords(comment, category):
-        # Define the messages as required by the chat-based API
-        messages = [
-            {"role": "system", "content": "You are a helpful TikTok comment classifier."},
-            {"role": "user", "content": f"Classify the following comment as 'good' or 'bad' specifically in relation to '{category}': {comment}"}
-        ]
-        
-        try:
-            # Use the chat/completions endpoint
-            response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",  # Specify the chat model
-                messages=messages,
-                temperature=0.2,
-                max_tokens=150
-            )
-            
-            classification_and_reason = response['choices'][0]['message']['content'].strip()
-            
-            # Determine if the comment is 'bad' or related to the category
-            is_bad = "bad" in classification_and_reason.lower()
-            return classification_and_reason, is_bad, True  # Matched the category
-        
-        except Exception as e:
-            st.error(f"Error occurred while classifying the comment: {e}")
-            return "Error", False, False
-    else:
-        return "Comment does not match selected category.", False, False
+    response = openai.Completion.create(
+        model="gpt-3.5-turbo",
+        prompt=prompt,
+        temperature=0.2,
+        max_tokens=150
+    )
+
+    classification_and_reason = response.choices[0].text.strip()
+    is_bad = "bad" in classification_and_reason.lower()
+    related_to_category = "yes" in classification_and_reason.lower().split("is this comment related to the category?")[-1].strip()
+    
+    return classification_and_reason, is_bad, related_to_category
 
 # Initialize session state variables
 if "archive_mode" not in st.session_state:
@@ -131,6 +111,8 @@ def main_page():
             elif st.session_state["archive_mode"] == "Archive ALL bad comments":
                 # Archive all bad comments regardless of category
                 classification, is_bad, _ = classify_comment(translated_comment, "general")
+                
+                # If the comment is classified as bad, archive it
                 if is_bad:
                     st.error(f"🚫 Comment Archived: {comment} (Translated: {translated_comment})")
                 else:
