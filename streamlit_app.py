@@ -3,7 +3,7 @@ import openai
 from PIL import Image
 import io
 import os
-from googletrans import Translator  # Import googletrans for translation
+from googletrans import Translator
 
 # Load the OpenAI API key securely from environment variables
 openai_api_key = os.getenv("OPENAI_API_KEY")
